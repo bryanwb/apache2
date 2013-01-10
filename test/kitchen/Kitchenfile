@@ -42,6 +42,7 @@ cookbook "apache2" do
   configuration "mod_python"
   configuration "mod_ssl"
   configuration "mod_status_remote"
+  configuration "mod_pagespeed"
   # placeholder until COOK-744 is fixed
   #configuration "god_monitor"
   exclude :platform => 'centos', :configuration => 'mod_authnz_ldap'
