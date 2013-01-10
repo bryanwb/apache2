@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: apache2
-# Recipe:: php5
+# Recipe:: mod_pagespeed
 #
 # Copyright 2013 Bryan W. Berry
 #
@@ -18,28 +18,42 @@
 #
 
 def sum_version_num(version)
-  v_nums = version.split(".").each {|str| str.to_i }
-  (vnums[0] * 1000) + (vnums[1] * 100) + vnums[2]
+  v_nums = version.split(".").map {|str| str.to_i }
+  third_num = v_nums[2] < 10 ? v_nums[2] * 10 : v_nums[2]
+  (v_nums[0] * 1000) + (v_nums[1] * 100) + third_num
 end
 
 def version_2_4_2?
-  version = `httpd -v | head -n1`.match(/(\d\.\d.\d\d)/)[0]
+  if platform_family? 'debian'
+    version = `apt-cache showpkg --no-all-versions apache2 | grep  head -n3 | tail -1 | cut -f1 -d\ `
+  elsif platform_family? 'rhel'
+    version = `yum -C info httpd | grep Version | head -n1 | awk '{print $3}'`
+  end
   sum_version_num(version) >= sum_version_num("2.4.2")
 end
 
+def compute_module_path
+  if version_2_4_2?
+    module_path = "#{node['apache']['lib_dir']}/modules/mod_pagespeed_ap24.so"
+  else
+    module_path = "#{node['apache']['lib_dir']}/modules/mod_pagespeed.so"
+  end
+end
+
+pagespeed_module_path = compute_module_path
+  
 base_url = "https://dl-ssl.google.com/dl/linux/direct/mod-pagespeed-stable_current_"
 
 arch = node.kernel.machine =~ /i[36]86/ ? "i386" : "x86_64"
 
-case node['platform_family']
-when "debian"
+if platform_family?  "debian"
   remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.deb" do
     source "#{base_url}#{arch}.deb"
   end
   package "mod-pagespeed" do
     source "#{Chef::Config['file_cache_path']}/mod_pagespeed.deb"
   end
-when "rhel"
+elsif platform_family? "rhel"
   remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.rpm" do
     source "#{base_url}#{arch}.rpm"
   end
@@ -47,7 +61,7 @@ when "rhel"
     source "#{Chef::Config['file_cache_path']}/mod_pagespeed.rpm"
   end
 
-   [ "pagespeed_libraries.conf", "pagespeed.conf" ].each do |f|
+  [ "pagespeed_libraries.conf", "pagespeed.conf" ].each do |f|
     file "/etc/httpd/conf.d/#{f}" do
       action :delete
       backup false
@@ -57,14 +71,10 @@ end
 
 apache_module "pagespeed" do
   conf true
-  if apache_version < "2.4.2"
-    module_path "#{node['apache']['lib_dir']}/mod_pagespeed.so"
-  else
-    module_path "#{node['apache']['lib_dir']}/mod_pagespeed_ap24.so"
-  end
+  module_path pagespeed_module_path
 end
 
-apache_module "pagespeed_libraries" do
+apache_conf "pagespeed_libraries" do
   conf true
 end
 

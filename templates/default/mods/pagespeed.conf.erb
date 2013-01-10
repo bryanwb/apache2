@@ -54,8 +54,10 @@
     # directive. This directive contains a comma-separated list of
     # filter names, and can be repeated.
     #
-    # ModPagespeedEnableFilters rewrite_javascript,rewrite_css
-    # ModPagespeedEnableFilters collapse_whitespace,elide_attributes
+    ModPagespeedEnableFilters rewrite_javascript,rewrite_css,rewrite_images,combine_css
+    ModPagespeedEnableFilters collapse_whitespace,elide_attributes,combine_javascript,insert_image_dimensions
+    ModPagespeedEnableFilters inline_preview_images,resize_mobile_images,remove_comments
+    ModPagespeedEnableFilters lazyload_images,insert_dns_prefetch,sprite_images,defer_javascript,canonicalize_javascript_libraries
 
     # Explicitly forbids the enabling of specific filters using either query
     # parameters or request headers. This is useful, for example, when we do
@@ -83,7 +85,9 @@
     # domain. By default only resources with the same origin as the
     # HTML file are rewritten. For example:
     #
-    #   ModPagespeedDomain cdn.myhost.com
+    <% node[:apache][:mod_pagespeed][:domains].each do |d| -%>
+        ModPagespeedDomain http://<%= d %>
+    <% end -%>
     #
     # This will allow resources found on http://cdn.myhost.com to be
     # rewritten in addition to those in the same domain as the HTML.
@@ -97,8 +101,9 @@
     #
     # ModPagespeedFileCacheSizeKb          102400
     # ModPagespeedFileCacheCleanIntervalMs 3600000
-    # ModPagespeedLRUCacheKbPerProcess     1024
-    # ModPagespeedLRUCacheByteLimit        16384
+    ModPagespeedLRUCacheKbPerProcess     102400
+    ModPagespeedLRUCacheByteLimit        1638400
+  
     # ModPagespeedCssFlattenMaxBytes       2048
     # ModPagespeedCssInlineMaxBytes        2048
     # ModPagespeedCssImageInlineMaxBytes   2048
@@ -252,7 +257,7 @@
         # if the Apache server is protected by a reverse proxy that will
         # filter URLs in some fashion.
         Allow from localhost
-        Allow from 127.0.0.1
+        Allow from <%= node[:apache][:mod_pagespeed][:stats_visibility] %>
         SetHandler mod_pagespeed_statistics
     </Location>
 
@@ -296,7 +301,7 @@
         Order allow,deny
         # This can be configured similarly to mod_pagespeed_statistics above.
         Allow from localhost
-        Allow from 127.0.0.1
+        Allow from <%= node[:apache][:mod_pagespeed][:stats_visibility] %>
         SetHandler mod_pagespeed_console
     </Location>
 
@@ -310,12 +315,12 @@
 
     <Location /mod_pagespeed_message>
         Allow from localhost
-        Allow from 127.0.0.1
+        Allow from <%= node[:apache][:mod_pagespeed][:stats_visibility] %>
         SetHandler mod_pagespeed_message
     </Location>
     <Location /mod_pagespeed_referer_statistics>
         Allow from localhost
-        Allow from 127.0.0.1
+        Allow from <%= node[:apache][:mod_pagespeed][:stats_visibility] %>
         SetHandler mod_pagespeed_referer_statistics
     </Location>
 </IfModule>
