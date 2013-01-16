@@ -68,7 +68,7 @@ default[:apache][:mod_pagespeed][:packages] = {
 }
 
 version = node[:apache][:mod_pagespeed][:version]
-node_pkg_type = platform_family?("debian", "ubuntu") ? :deb : :rpm
+node_pkg_type = node.platform_family == "debian" ? :deb : :rpm
 node_arch = node.kernel.machine =~ /i[356]86/ ? :i386 : :x86_64
 package = node[:apache][:mod_pagespeed][:packages][version][node_pkg_type][node_arch]
 

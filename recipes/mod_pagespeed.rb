@@ -24,7 +24,7 @@ def sum_version_num(version)
 end
 
 def apache_2_4_2?
-  if platform_family?("debian", "ubuntu")
+  if node.platform_family == "debian"
     version = `apt-cache showpkg --no-all-versions apache2 | grep  head -n3 | tail -1 | cut -f1 -d\ `
   else
     version = `yum -C info httpd | grep Version | head -n1 | awk '{print $3}'`
