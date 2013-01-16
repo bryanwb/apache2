@@ -23,7 +23,7 @@
 
     # If you want mod_pagespeed process XHTML as well, please uncomment this
     # line.
-    # AddOutputFilterByType MOD_PAGESPEED_OUTPUT_FILTER application/xhtml+xml
+    AddOutputFilterByType MOD_PAGESPEED_OUTPUT_FILTER application/xhtml+xml
 
     # The ModPagespeedFileCachePath directory must exist and be writable
     # by the apache user (as specified by the User directive).
@@ -37,7 +37,8 @@
     # directives, below. Valid values for ModPagespeedRewriteLevel are
     # PassThrough, CoreFilters and TestingCoreFilters.
     #
-    # ModPagespeedRewriteLevel PassThrough
+    
+    ModPagespeedRewriteLevel <%= node[:apache][:mod_pagespeed][:rewrite_level] %>
 
     # Explicitly disables specific filters. This is useful in
     # conjuction with ModPagespeedRewriteLevel. For instance, if one
@@ -46,7 +47,9 @@
     # ModPagespeedDisableFilters. This directive contains a
     # comma-separated list of filter names, and can be repeated.
     #
-    # ModPagespeedDisableFilters rewrite_images
+    <% node[:apache][:mod_pagespeed][:filters][:disable].each do |filter|  -%>
+    ModPagespeedDisableFilters <%= filter %>
+    <% end -%>
 
     # Explicitly enables specific filters. This is useful in
     # conjuction with ModPagespeedRewriteLevel. For instance, filters
@@ -54,10 +57,9 @@
     # directive. This directive contains a comma-separated list of
     # filter names, and can be repeated.
     #
-    ModPagespeedEnableFilters rewrite_javascript,rewrite_css,rewrite_images,combine_css
-    ModPagespeedEnableFilters collapse_whitespace,elide_attributes,combine_javascript,insert_image_dimensions
-    ModPagespeedEnableFilters inline_preview_images,resize_mobile_images,remove_comments
-    ModPagespeedEnableFilters lazyload_images,insert_dns_prefetch,sprite_images,canonicalize_javascript_libraries
+    <% node[:apache][:mod_pagespeed][:filters][:enable].each do |filter|  -%>
+    ModPagespeedEnableFilters <%= filter %>
+    <% end -%>
 
     # Explicitly forbids the enabling of specific filters using either query
     # parameters or request headers. This is useful, for example, when we do
@@ -65,7 +67,10 @@
     # directive contains a comma-separated list of filter names, and can be
     # repeated.
     #
-    # ModPagespeedForbidFilters rewrite_images
+    <% node[:apache][:mod_pagespeed][:filters][:forbid].each do |filter|  -%>
+    ModPagespeedForbidFilters <%= filter %>
+    <% end -%>
+
 
     # How long mod_pagespeed will wait to return an optimized resource
     # (per flush window) on first request before giving up and returning the
@@ -99,10 +104,11 @@
 
     # Other defaults (cache sizes and thresholds):
     #
-    # ModPagespeedFileCacheSizeKb          102400
-    # ModPagespeedFileCacheCleanIntervalMs 3600000
-    ModPagespeedLRUCacheKbPerProcess     102400
-    ModPagespeedLRUCacheByteLimit        1638400
+
+    ModPagespeedFileCacheSizeKb          <%= node[:apache][:mod_pagespeed][:file_cache][:size_kb] %>
+    ModPagespeedFileCacheCleanIntervalMs <%= node[:apache][:mod_pagespeed][:file_cache][:clean_interval] %>
+    ModPagespeedLRUCacheKbPerProcess     <%= node[:apache][:mod_pagespeed][:lru_cache][:kb_per_process] %>
+    ModPagespeedLRUCacheByteLimit        <%= node[:apache][:mod_pagespeed][:lru_cache][:byte_limit] %>
   
     # ModPagespeedCssFlattenMaxBytes       2048
     # ModPagespeedCssInlineMaxBytes        2048

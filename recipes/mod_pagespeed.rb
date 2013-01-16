@@ -23,17 +23,17 @@ def sum_version_num(version)
   (v_nums[0] * 1000) + (v_nums[1] * 100) + third_num
 end
 
-def version_2_4_2?
-  if platform_family? 'debian'
+def apache_2_4_2?
+  if platform_family?("debian", "ubuntu")
     version = `apt-cache showpkg --no-all-versions apache2 | grep  head -n3 | tail -1 | cut -f1 -d\ `
-  elsif platform_family? 'rhel'
+  else
     version = `yum -C info httpd | grep Version | head -n1 | awk '{print $3}'`
   end
   sum_version_num(version) >= sum_version_num("2.4.2")
 end
 
 def compute_module_path
-  if version_2_4_2?
+  if apache_2_4_2?
     module_path = "#{node['apache']['lib_dir']}/modules/mod_pagespeed_ap24.so"
   else
     module_path = "#{node['apache']['lib_dir']}/modules/mod_pagespeed.so"
@@ -41,31 +41,21 @@ def compute_module_path
 end
 
 pagespeed_module_path = compute_module_path
-  
-base_url = "https://dl-ssl.google.com/dl/linux/direct/mod-pagespeed-stable_current_"
+package_extension = platform_family?("debian", "ubuntu") ? "deb" : "rpm"
 
-arch = node.kernel.machine =~ /i[36]86/ ? "i386" : "x86_64"
+remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}" do
+  source node[:apache][:mod_pagespeed][:package][:url]
+  checksum node[:apache][:mod_pagespeed][:package][:checksum]
+end
 
-if platform_family?  "debian"
-  remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.deb" do
-    source "#{base_url}#{arch}.deb"
-  end
-  package "mod-pagespeed" do
-    source "#{Chef::Config['file_cache_path']}/mod_pagespeed.deb"
-  end
-elsif platform_family? "rhel"
-  remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.rpm" do
-    source "#{base_url}#{arch}.rpm"
-  end
-  package "mod-pagespeed" do
-    source "#{Chef::Config['file_cache_path']}/mod_pagespeed.rpm"
-  end
+package "mod-pagespeed" do
+  source "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}"
+end
 
-  [ "pagespeed_libraries.conf", "pagespeed.conf" ].each do |f|
-    file "/etc/httpd/conf.d/#{f}" do
-      action :delete
-      backup false
-    end
+[ "pagespeed_libraries.conf", "pagespeed.conf" ].each do |f|
+  file "/etc/httpd/conf.d/#{f}" do
+    action :delete
+    backup false
   end
 end
 
@@ -77,4 +67,3 @@ end
 apache_conf "pagespeed_libraries" do
   conf true
 end
-
