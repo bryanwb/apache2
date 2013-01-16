@@ -91,7 +91,7 @@
     # HTML file are rewritten. For example:
     #
     <% node[:apache][:mod_pagespeed][:domains].each do |d| -%>
-        ModPagespeedDomain http://<%= d %>
+        ModPagespeedDomain <%= d %>
     <% end -%>
     #
     # This will allow resources found on http://cdn.myhost.com to be

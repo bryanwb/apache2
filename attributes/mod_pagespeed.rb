@@ -77,7 +77,7 @@ default[:apache][:mod_pagespeed][:package] = {
   :checksum => package[:checksum]
 }
 
-default[:apache][:mod_pagespeed][:filters] => {
+default[:apache][:mod_pagespeed][:filters] = {
   :enable => [],
   :disable => [],
   :forbid => []
