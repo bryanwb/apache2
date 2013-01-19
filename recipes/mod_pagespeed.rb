@@ -24,12 +24,7 @@ def sum_version_num(version)
 end
 
 def apache_2_4_2?
-  if node.platform_family == "debian"
-    version = `apt-cache showpkg --no-all-versions apache2 | grep  head -n3 | tail -1 | cut -f1 -d\ `
-  else
-    version = `yum -C info httpd | grep Version | head -n1 | awk '{print $3}'`
-  end
-  sum_version_num(version) >= sum_version_num("2.4.2")
+  sum_version_num(node[:apache][:candidate_version]) >= sum_version_num("2.4.2")
 end
 
 def compute_module_path
@@ -40,18 +35,71 @@ def compute_module_path
   end
 end
 
+if node.platform_family == "debian" or node.platform_family == "rhel"
+
+  case node.platform_family
+  when "debian"
+    apache2_status_cmd = Chef::ShellOut.new("dpkg -s apache2")
+    apache2_status_cmd.run_command
+    apache2_installed = apache2_status_cmd.status == 0 ? true : false
+    candidate_cmd = "apt-cache showpkg --no-all-versions apache2 | head -n3 | tail -1 | cut -f1 -d\\ "
+
+    r = ruby_block "get_apache_candidate" do
+      block do
+        cmd = Chef::ShellOut.new(candidate_cmd)
+        cmd.run_command
+        cmd.error!
+        node[:apache][:candidate_version] = cmd.stdout.rstrip
+      end
+      action :nothing
+    end
+    r.run_action :create
+
+
+    remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.deb" do
+      source node[:apache][:mod_pagespeed][:package][:url]
+      checksum node[:apache][:mod_pagespeed][:package][:checksum]
+      mode "0755"
+    end
+
+    node[:apache][:candidate_version] =~ /^(2.\d).*/
+    apache_version = $1
+    package "apache#{apache_version}-common"
+    dpkg_package "mod-pagespeed" do
+      source "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}"
+    end
+  when "rhel"
+    apache2_status_cmd = Chef::ShellOut.new("rpm -qa httpd")
+    apache2_status_cmd.run_command
+    apache2_installed = apache2_status.stdout.empty? ? false : true
+    candidate_cmd = "yum info httpd | grep Version | head -n1 | awk '{print $3}'"
+
+    r = ruby_block "get_apache_candidate" do
+    block do
+      cmd = Chef::ShellOut.new(candidate_cmd)
+      cmd.run_command
+      cmd.error!
+      node[:apache][:candidate_version] = cmd.stdout.rstrip
+    end
+    action :nothing
+    end
+    r.run_action :create
+    
+    remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.rpm" do
+      source node[:apache][:mod_pagespeed][:package][:url]
+      checksum node[:apache][:mod_pagespeed][:package][:checksum]
+      mode "0755"
+    end
+
+    package "mod-pagespeed" do
+      source "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}"
+    end
+  end
+
+end
+
 pagespeed_module_path = compute_module_path
-package_extension = platform_family?("debian", "ubuntu") ? "deb" : "rpm"
-
-remote_file "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}" do
-  source node[:apache][:mod_pagespeed][:package][:url]
-  checksum node[:apache][:mod_pagespeed][:package][:checksum]
-end
-
-package "mod-pagespeed" do
-  source "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}"
-end
-
+  
 [ "pagespeed_libraries.conf", "pagespeed.conf" ].each do |f|
   file "/etc/httpd/conf.d/#{f}" do
     action :delete

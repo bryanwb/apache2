@@ -147,3 +147,4 @@ default['apache']['default_modules'] = %w{
 %w{ log_config logio }.each do |log_mod|
   default['apache']['default_modules'] << log_mod if ["rhel", "fedora", "suse", "arch", "freebsd"].include?(node['platform_family'])
 end
+

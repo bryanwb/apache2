@@ -45,6 +45,7 @@ cookbook "apache2" do
   configuration "mod_pagespeed"
   # placeholder until COOK-744 is fixed
   #configuration "god_monitor"
+  lint false
   exclude :platform => 'centos', :configuration => 'mod_authnz_ldap'
   exclude :platform => 'centos', :configuration => 'mod_auth_cas'
   run_list_extras ['apache2_test::setup']
