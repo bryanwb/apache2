@@ -66,12 +66,12 @@ if node.platform_family == "debian" or node.platform_family == "rhel"
     apache_version = $1
     package "apache#{apache_version}-common"
     dpkg_package "mod-pagespeed" do
-      source "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}"
+      source "#{Chef::Config['file_cache_path']}/mod_pagespeed.deb"
     end
   when "rhel"
     apache2_status_cmd = Chef::ShellOut.new("rpm -qa httpd")
     apache2_status_cmd.run_command
-    apache2_installed = apache2_status.stdout.empty? ? false : true
+    apache2_installed = apache2_status_cmd.stdout.empty? ? false : true
     candidate_cmd = "yum info httpd | grep Version | head -n1 | awk '{print $3}'"
 
     r = ruby_block "get_apache_candidate" do
@@ -92,7 +92,7 @@ if node.platform_family == "debian" or node.platform_family == "rhel"
     end
 
     package "mod-pagespeed" do
-      source "#{Chef::Config['file_cache_path']}/mod_pagespeed.#{package_extension}"
+      source "#{Chef::Config['file_cache_path']}/mod_pagespeed.rpm"
     end
   end
 
