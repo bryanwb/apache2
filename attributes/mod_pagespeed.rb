@@ -86,7 +86,8 @@ default[:apache][:mod_pagespeed][:filters] = {
 
 default[:apache][:mod_pagespeed][:file_cache] = {
   :size_kb => "102400",
-  :clean_interval => "3600000"
+  :clean_interval => "3600000",
+  :inode_limit => "500000"
 }
 
 default[:apache][:mod_pagespeed][:lru_cache] = {
