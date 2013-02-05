@@ -20,6 +20,7 @@ default[:apache][:mod_pagespeed][:domains] = [ node.fqdn ]
 default[:apache][:mod_pagespeed][:stats_visibility] = "127.0.0.1"
 default[:apache][:mod_pagespeed][:version] = "stable"
 default[:apache][:mod_pagespeed][:rewrite_level] = "CoreFilters"
+default[:apache][:mod_pagespeed][:rewrite_deadline] = "10"
 default[:apache][:mod_pagespeed][:packages] = {
   :beta =>  {
     :deb => {

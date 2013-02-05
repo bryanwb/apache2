@@ -83,7 +83,7 @@
     # mod_pagespeed will wait indefinitely for the rewrite to complete before
     # returning.
     #
-    # ModPagespeedRewriteDeadlinePerFlushMs 10
+    ModPagespeedRewriteDeadlinePerFlushMs <%= node[:apache][:mod_pagespeed][:rewrite_deadline] %>
 
     # ModPagespeedDomain
     # authorizes rewriting of JS, CSS, and Image files found in this
